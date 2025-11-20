@@ -1,0 +1,141 @@
+{% extends 'cinema/base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Блок фильтров -->
+    <div class="col-md-3">
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">🔍 Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" id="filter-form">
+                    <div class="mb-3">
+                        <label for="id_movie_title" class="form-label">Название фильма</label>
+                        {{ form.movie_title }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_genre" class="form-label">Жанр</label>
+                        {{ form.genre }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_date_from" class="form-label">С даты</label>
+                        {{ form.date_from }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_date_to" class="form-label">По дату</label>
+                        {{ form.date_to }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_price_min" class="form-label">Цена от</label>
+                        {{ form.price_min }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_price_max" class="form-label">Цена до</label>
+                        {{ form.price_max }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Применить фильтры</button>
+                    <a href="{% url 'schedule' %}" class="btn btn-outline-secondary w-100 mt-2">Сбросить фильтры</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Блок сеансов -->
+    <div class="col-md-9">
+        <h1 class="mb-4">🎬 Расписание сеансов</h1>
+
+        <div class="alert alert-info">
+            📊 Найдено сеансов: <strong>{{ page_obj.paginator.count }}</strong>
+        </div>
+
+        {% for session in page_obj %}
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="card-title">{{ session.movie.title }}</h5>
+                        <p class="card-text">
+                            <span class="badge bg-primary">🕒 {{ session.start_time|date:"d.m.Y H:i" }} - {{ session.end_time|date:"H:i" }}</span>
+                            <span class="badge bg-secondary">🎪 Зал: {{ session.hall.name }}</span>
+                            <span class="badge bg-success">💰 {{ session.price }} руб.</span>
+                            <span class="badge bg-info">⏱ {{ session.movie.duration }} мин.</span>
+                        </p>
+                        {% if session.movie.genres.all %}
+                        <p class="card-text">
+                            <strong>Жанры:</strong>
+                            {% for genre in session.movie.genres.all %}
+                                <span class="badge bg-warning text-dark">{{ genre.name }}</span>
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-outline-primary">Бронировать</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-warning text-center">
+            😔 Сеансы по вашему запросу не найдены.
+            <br>
+            <a href="{% url 'schedule' %}" class="btn btn-outline-primary mt-2">Показать все сеансы</a>
+        </div>
+        {% endfor %}
+
+        <!-- Пагинация -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">« Назад</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">« Назад</span>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page={{ page_obj.next_page_number }}">Вперед »</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Вперед »</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Авто-отправка формы при изменении выпадающих списков
+document.addEventListener('DOMContentLoaded', function() {
+    const autoSubmitFields = document.querySelectorAll('#id_genre, #id_date_from, #id_date_to');
+
+    autoSubmitFields.forEach(function(field) {
+        field.addEventListener('change', function() {
+            document.getElementById('filter-form').submit();
+        });
+    });
+});
+</script>
+{% endblock %}
